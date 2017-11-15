@@ -20,7 +20,7 @@ const logger = createLogger({
 
 const store = createStore(
     chat,
-    applyMiddleware(logger)
+    applyMiddleware(logger, socketProxy)
 );
 
 export default store;

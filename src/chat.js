@@ -1,6 +1,5 @@
 import { OrderedMap } from 'immutable';
-import { combineReducers } from 'redux';
-import { createService } from './helpers/actions';
+import { combineReducers, bindActionCreators } from 'redux';
 
 export const USER_ADD = 'USER_ADD';
 export const USER_SIGN_UP = 'USER_SIGN_UP';
@@ -28,16 +27,16 @@ export class User {
     }
 }
 
-export const Actions = {
-    sendMessage: (text) => ({ type: MESSAGE_SEND, payload: new Message(text), meta: { emit: MESSAGE_ADD } }),
+export const Actions = (room) => ({
+    sendMessage: (text) => ({ type: MESSAGE_SEND, payload: new Message(text), meta: { room, event: MESSAGE_ADD } }),
     addMessage: (message) => ({ type: MESSAGE_ADD, payload: message }),
     connectWithUser: (id) => ({ type: CONNECT_WITH_USER, payload: id }),
     addUser: (socketId) => ({ type: USER_ADD, payload: new User({ socketId }) }),
-    signIn: (socketId, login) => ({ type: USER_SIGN_IN, payload: { socketId, login }, meta: { emit: USER_ADD } }),
+    signIn: (socketId, login) => ({ type: USER_SIGN_IN, payload: { socketId, login }, meta: { room, event: USER_ADD } }),
     signUp: (login) => ({ type: USER_SIGN_UP, payload: { login } })
-};
+});
 
-export const service = createService(Actions);
+export const createChat = (dispatch, room) => bindActionCreators(Actions(room), dispatch);
 
 const messagesInitialState = OrderedMap();
 

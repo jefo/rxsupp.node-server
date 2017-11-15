@@ -5,21 +5,24 @@ import {
   usersReducer,
   Actions,
   Message,
-  User,
+  User
 } from '../src/chat';
 
 describe('chat', () => {
 
+  let chatActions = Actions('room1');
+
   it('sendMessage', () => {
-    let messageAction = Actions.sendMessage('привет');
+    let messageAction = chatActions.sendMessage('привет');
     assert.deepEqual(messageAction, {
       type: 'MESSAGE_SEND',
-      payload: messageAction.payload
+      payload: messageAction.payload,
+      meta: { room: 'room1', event: 'MESSAGE_ADD' }
     });
   });
 
   it('MESSAGE_SEND', () => {
-    let messageAction = Actions.sendMessage('привет');
+    let messageAction = chatActions.sendMessage('привет');
     let state = messagesReducer(OrderedMap(), messageAction);
     let expectedState = {
       [messageAction.payload.timestamp]: messageAction.payload
@@ -28,7 +31,7 @@ describe('chat', () => {
   });
 
   it('USER_ADD', () => {
-    const action = Actions.addUser('login');
+    const action = chatActions.addUser('login');
     assert.deepEqual(action, {
       type: 'USER_ADD',
       payload: { login: 'login', isLoggedIn: false, socketId: 'login' }
@@ -41,15 +44,16 @@ describe('chat', () => {
   });
 
   it('signIn', () => {
-    const action = Actions.signIn(123, 'login');
+    const action = chatActions.signIn(123, 'login');
     assert.deepEqual(action, {
       type: 'USER_SIGN_IN',
-      payload: { socketId: 123, login: 'login' }
+      payload: { socketId: 123, login: 'login' },
+      meta: { room: 'room1', event: 'USER_ADD' }
     });
   });
 
   it('USER_SIGN_IN', () => {
-    const action = Actions.signIn('123', 'login');
+    const action = chatActions.signIn('123', 'login');
     let initialState = OrderedMap({
       [action.payload.socketId]: action.payload
     });

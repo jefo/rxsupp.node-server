@@ -5,5 +5,6 @@ export default store => next => action => {
         let { room, event } = action.meta.emit;
         io.to(room).emit(event, action.payload);
     }
+
     return next(action);
 };
