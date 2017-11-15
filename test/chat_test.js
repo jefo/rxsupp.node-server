@@ -3,10 +3,7 @@ import { OrderedMap } from 'immutable';
 import {
   messagesReducer,
   usersReducer,
-  sendMessage,
-  addMessage,
-  addUser,
-  MESSAGE_SEND,
+  Actions,
   Message,
   User,
 } from '../src/chat';
@@ -14,15 +11,15 @@ import {
 describe('chat', () => {
 
   it('sendMessage', () => {
-    let messageAction = sendMessage('привет');
+    let messageAction = Actions.sendMessage('привет');
     assert.deepEqual(messageAction, {
-      type: MESSAGE_SEND,
+      type: 'MESSAGE_SEND',
       payload: messageAction.payload
     });
   });
 
   it('MESSAGE_SEND', () => {
-    let messageAction = sendMessage('привет');
+    let messageAction = Actions.sendMessage('привет');
     let state = messagesReducer(OrderedMap(), messageAction);
     let expectedState = {
       [messageAction.payload.timestamp]: messageAction.payload
@@ -31,8 +28,32 @@ describe('chat', () => {
   });
 
   it('USER_ADD', () => {
-    const action = addUser(new User('user'));
+    const action = Actions.addUser('login');
+    assert.deepEqual(action, {
+      type: 'USER_ADD',
+      payload: { login: 'login', isLoggedIn: false, socketId: 'login' }
+    });
     let state = usersReducer(OrderedMap(), action);
+    let expectedState = {
+      [action.payload.login]: action.payload
+    };
+    assert.deepEqual(state.toJS(), expectedState);
+  });
+
+  it('signIn', () => {
+    const action = Actions.signIn(123, 'login');
+    assert.deepEqual(action, {
+      type: 'USER_SIGN_IN',
+      payload: { socketId: 123, login: 'login' }
+    });
+  });
+
+  it('USER_SIGN_IN', () => {
+    const action = Actions.signIn('123', 'login');
+    let initialState = OrderedMap({
+      [action.payload.socketId]: action.payload
+    });
+    let state = usersReducer(initialState, action);
     let expectedState = {
       [action.payload.login]: action.payload
     };

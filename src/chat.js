@@ -1,9 +1,9 @@
 import { OrderedMap } from 'immutable';
 import { combineReducers } from 'redux';
 
-export const USER_LOGIN = 'USER_LOGIN';
 export const USER_ADD = 'USER_ADD';
-export const USER_REGISTER = 'USER_REGISTER';
+export const USER_SIGN_UP = 'USER_SIGN_UP';
+export const USER_SIGN_IN = 'USER_SIGN_IN';
 export const SET_USER_OFFLINE = 'SET_USER_OFFLINE';
 export const MESSAGE_ADD = 'MESSAGE_ADD';
 export const MESSAGE_SEND = 'MESSAGE_SEND';
@@ -20,33 +20,26 @@ export class Message {
 }
 
 export class User {
-    constructor(login) {
-        this.login = login;
+    constructor({ socketId, login }) {
+        this.login = login ? login : socketId;
+        this.socketId = socketId;
+        this.isLoggedIn = this.login !== socketId;
     }
 }
 
-export const socketAction = (action) => {
-    Object.assign(action.meta, {
-        proxyToSocket: true
-    });
-    return action;
+export const Actions = {
+    sendMessage: (text) => ({ type: MESSAGE_SEND, payload: new Message(text) }),
+    addMessage: (message) => ({ type: MESSAGE_ADD, payload: message }),
+    connectWithUser: (id) => ({ type: CONNECT_WITH_USER, payload: id }),
+    addUser: (socketId) => ({ type: USER_ADD, payload: new User({ socketId }) }),
+    signIn: (socketId, login) => ({ type: USER_SIGN_IN, payload: { socketId, login } }),
+    signUp: (login) => ({ type: USER_SIGN_UP, payload: { login } })
 };
-
-export const sendMessage = (text) => ({
-    type: MESSAGE_SEND,
-    payload: new Message(text)
-});
-
-export const addMessage = (message) => ({ type: ADD_MESSAGE, payload: message });
-export const connectWithUser = (id) => ({ type: CONNECT_WITH_USER, payload: id });
-export const addUser = (user) => ({ type: USER_ADD, payload: user }); 
 
 const messagesInitialState = OrderedMap();
 
 export const messagesReducer = (state = messagesInitialState, { type, payload }) => {
     switch (type) {
-        case USER_ADD:
-            return state.merge(payload.messages);
         case MESSAGE_ADD:
         case MESSAGE_SEND:
             return state.set(payload.timestamp, payload);
@@ -59,9 +52,13 @@ const usersInitialState = OrderedMap();
 
 export const usersReducer = (state = usersInitialState, { type, payload }) => {
     switch (type) {
+        case USER_SIGN_IN:
+            return state
+                .set(payload.login, payload)
+                .remove(payload.socketId);
         case USER_ADD:
         case SET_USER_OFFLINE:
-            return state.set(payload.login, payload)
+            return state.set(payload.login, payload);
         default:
             return state;
     }
