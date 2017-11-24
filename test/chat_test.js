@@ -34,7 +34,8 @@ describe('chat', () => {
     const action = chatActions.addUser('login');
     assert.deepEqual(action, {
       type: 'USER_ADD',
-      payload: { login: 'login', isLoggedIn: false, socketId: 'login' }
+      payload: { login: 'login', isLoggedIn: false, socketId: 'login' },
+      meta: { room: 'room1', event: 'USER_UPDATE' }
     });
     let state = usersReducer(OrderedMap(), action);
     let expectedState = {

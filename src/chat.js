@@ -1,7 +1,11 @@
 import { OrderedMap } from 'immutable';
 import { combineReducers, bindActionCreators } from 'redux';
+import { createSelector } from 'reselect';
 
+export const CHAT_UPDATE = 'CHAT_UPDATE';
+export const CHAT_READY = 'CHAT_READY';
 export const USER_ADD = 'USER_ADD';
+export const USER_UPDATE = 'USER_UPDATE';
 export const USER_SIGN_UP = 'USER_SIGN_UP';
 export const USER_SIGN_IN = 'USER_SIGN_IN';
 export const SET_USER_OFFLINE = 'SET_USER_OFFLINE';
@@ -24,6 +28,7 @@ export class User {
         this.login = login ? login : socketId;
         this.socketId = socketId;
         this.isLoggedIn = this.login !== socketId;
+        this.isOnline = true;
     }
 }
 
@@ -31,12 +36,19 @@ export const Actions = (room) => ({
     sendMessage: (text) => ({ type: MESSAGE_SEND, payload: new Message(text), meta: { room, event: MESSAGE_ADD } }),
     addMessage: (message) => ({ type: MESSAGE_ADD, payload: message }),
     connectWithUser: (id) => ({ type: CONNECT_WITH_USER, payload: id }),
-    addUser: (socketId) => ({ type: USER_ADD, payload: new User({ socketId }) }),
-    signIn: (socketId, login) => ({ type: USER_SIGN_IN, payload: { socketId, login }, meta: { room, event: USER_ADD } }),
-    signUp: (login) => ({ type: USER_SIGN_UP, payload: { login } })
+    addUser: (socketId) => ({ type: USER_ADD, payload: new User({ socketId }), meta: { room, event: USER_ADD } }),
+    signIn: (socketId, login) => ({ type: USER_SIGN_IN, payload: { socketId, login }, meta: { room, event: USER_UPDATE } }),
+    signUp: (login) => ({ type: USER_SIGN_UP, payload: { login } }),
+    init: (socketId, users, messages) => {
+        let user = new User({ socketId });
+        return { type: CHAT_READY, payload: { user, users, messages }, meta: { room, event: CHAT_READY } };
+    }
 });
 
-export const createChat = (dispatch, room) => bindActionCreators(Actions(room), dispatch);
+export const createChat = (dispatch, room) => {
+    let actions = bindActionCreators(Actions(room), dispatch);
+    return Object.assign({}, actions);
+};
 
 const messagesInitialState = OrderedMap();
 
@@ -59,7 +71,7 @@ export const usersReducer = (state = usersInitialState, { type, payload }) => {
                 .set(payload.login, payload)
                 .remove(payload.socketId);
         case USER_ADD:
-        case SET_USER_OFFLINE:
+        case USER_UPDATE:
             return state.set(payload.login, payload);
         default:
             return state;
