@@ -1,9 +1,10 @@
-import { OrderedMap } from 'immutable';
+import { OrderedMap, fromJS } from 'immutable';
 import { combineReducers, bindActionCreators } from 'redux';
 import { createSelector } from 'reselect';
 
 export const CHAT_UPDATE = 'CHAT_UPDATE';
 export const CHAT_READY = 'CHAT_READY';
+export const CHAT_INIT = 'CHAT_INIT';
 export const USER_ADD = 'USER_ADD';
 export const USER_UPDATE = 'USER_UPDATE';
 export const USER_SIGN_UP = 'USER_SIGN_UP';
@@ -24,19 +25,22 @@ export class Message {
 }
 
 export class User {
-    constructor({ socketId, login }) {
-        this.login = login ? login : socketId;
-        this.socketId = socketId;
-        this.isLoggedIn = this.login !== socketId;
-        this.isOnline = true;
+    constructor(attrs) {
+        this.login = attrs.login ? attrs.login : attrs.socketId;
+        this.socketId = attrs.socketId;
+        this.isLoggedIn = this.login !== attrs.socketId;
+        this.status = 'online';
+        this.roomId = attrs.roomId
     }
 }
 
 export const Actions = (room) => ({
-    sendMessage: (text) => ({ type: MESSAGE_SEND, payload: new Message(text), meta: { room, event: MESSAGE_ADD } }),
-    addMessage: (message) => ({ type: MESSAGE_ADD, payload: message }),
+    addMessage: (message) => ({ type: MESSAGE_ADD, payload: message, meta: { room, event: MESSAGE_ADD } }),
     connectWithUser: (id) => ({ type: CONNECT_WITH_USER, payload: id }),
-    addUser: (socketId) => ({ type: USER_ADD, payload: new User({ socketId }), meta: { room, event: USER_ADD } }),
+    addUser: (user) => {
+        return { type: USER_ADD, payload: new User(user), meta: { room, event: USER_ADD } }
+    },
+    updateUser: (user) => ({ payload: user, type: USER_UPDATE, meta: { room, event: USER_UPDATE } }),
     signIn: (socketId, login) => ({ type: USER_SIGN_IN, payload: { socketId, login }, meta: { room, event: USER_UPDATE } }),
     signUp: (login) => ({ type: USER_SIGN_UP, payload: { login } }),
     init: (socketId, users, messages) => {
@@ -47,7 +51,18 @@ export const Actions = (room) => ({
 
 export const createChat = (dispatch, room) => {
     let actions = bindActionCreators(Actions(room), dispatch);
-    return Object.assign({}, actions);
+    return Object.assign({}, actions, {
+        selectAll: createSelector(
+            state => state.users,
+            state => state.messages,
+            (users, messages) => {
+                return {
+                    users: users.filter(user => user.get('status') !== 'offline').toJS(),
+                    messages: messages.toJS()
+                };
+            }
+        )
+    });
 };
 
 const messagesInitialState = OrderedMap();
@@ -68,11 +83,20 @@ export const usersReducer = (state = usersInitialState, { type, payload }) => {
     switch (type) {
         case USER_SIGN_IN:
             return state
-                .set(payload.login, payload)
+                .set(payload.login, fromJS(payload))
                 .remove(payload.socketId);
-        case USER_ADD:
+        case USER_ADD: 
+            let addKey = payload.login ? payload.login : payload.socketId;
+            return state.set(addKey, OrderedMap(payload));
         case USER_UPDATE:
-            return state.set(payload.login, payload);
+            let key = payload.login ? payload.login : payload.socketId;
+            return state.update(key, user => {
+                if (!user.merge) {
+                    user = fromJS(user)
+                }
+                console.log('wtf', state);
+                return user.merge(fromJS(payload))
+            });
         default:
             return state;
     }
