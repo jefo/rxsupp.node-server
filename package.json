@@ -6,8 +6,8 @@
   "author": "jefo <johnyjefo@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "neutrino start --use neutrino-preset-node",
-    "build": "neutrino build --use neutrino-preset-node",
+    "start": "neutrino start",
+    "build": "neutrino build",
     "test": "neutrino test --use neutrino-preset-node neutrino-preset-mocha",
     "debug": "neutrino start --use neutrino-preset-node --debug"
   },

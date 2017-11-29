@@ -20,6 +20,11 @@ if (module.hot) {
     module.hot.accept();
 }
 
+let colors = {
+    '947ee180-d468-11e7-bb25-c99d1ecb7563': '#5D4037',
+    'c3d46df0-d45f-11e7-b2da-2589ff87b18f': '#388E3C'
+};
+
 export default (port = 3000) => {
     const io = require('socket.io')(port);
     console.log('server runnin', port);
@@ -28,7 +33,12 @@ export default (port = 3000) => {
         socket.join(ticketId);
         const chat = createChat(store);
         let userId = socket.request._query.userId || uuid();
-        let user = new User({ id: userId, socketId: socket.id, room: ticketId });
+        let user = new User({
+            id: userId,
+            socketId: socket.id,
+            room: ticketId,
+            color: colors[userId]
+        });
         chat.addUser(user);
         socket.broadcast.emit(USER_ADD, user);
         let currentState = chat.getState();
@@ -49,7 +59,7 @@ export default (port = 3000) => {
         });
         socket.on(USER_UPDATE, (user) => {
             chat.updateUser(user);
-            if (user.room) {           
+            if (user.room) {
                 socket.join(user.room);
                 socket.broadcast.emit(USER_UPDATE, user);
             }
