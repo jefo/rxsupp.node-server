@@ -11,6 +11,7 @@ import {
     USER_UPDATE,
     USER_SET_ROOM,
     MESSAGE_ADD,
+    MESSAGES_ADD
 } from '../../rxsupp.core/src/chat';
 import Message from '../../rxsupp.core/src/Message';
 import User from '../../rxsupp.core/src/User';
@@ -62,9 +63,13 @@ export default (port = 3000) => {
             if (user.room) {
                 socket.join(user.room);
                 socket.broadcast.emit(USER_UPDATE, user);
+                let messages = store.getState().messages
+                    .filter(msg => msg.get('room') === user.room).toJS();
+                socket.emit(MESSAGES_ADD, messages);
             }
         });
-        socket.on('disconnect', () => chat.updateUser({ id: userId, status: 'disconnect' }));
+        socket.on('disconnect', () =>
+            chat.updateUser({ id: userId, status: 'disconnect' }));
     };
 
     io.on('connection', (socket) => {
